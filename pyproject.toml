@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ami-agentic-demos"
+version = "0.1.0"
+description = "Asteria Maritime Insights agentic demos (Demo 3: Port Impact Investigator)"
+requires-python = ">=3.12,<3.15"
+
+dependencies = [
+    "streamlit>=1.49,<2",
+    "pydantic>=2.9,<3",
+    "httpx>=0.27,<1",
+    "python-dotenv>=1.0,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<9",
+]
+assets = [
+    "fpdf2>=2.8,<3",
+    "pypdf>=5.1,<7",
+]
+
+[tool.setuptools.packages.find]
+include = ["shared*", "adapters*", "demos*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

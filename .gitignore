@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Environment and secrets
+.env
+
+# Generated artifacts
+downloads/
+*.log
+.DS_Store
+
+# Streamlit
+.streamlit/secrets.toml
+
+pattern1/.extraction-cache/
+.run/
+
+# Credentials, local state and machine-specific outputs
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.run/
+.extraction-cache/
+docs/verified-runs/
+docs/AUDIT_AND_GLM_HANDOFF.md
+docs/source-graph-build.json
+
+docs/live-scripted-run.json

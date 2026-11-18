@@ -1,0 +1,39 @@
+{
+  "template_id": "agentic_graph_rag",
+  "generation": {
+    "model_id": "ami-demo3-qwen",
+    "temperature": 0.2,
+    "max_completion_tokens": 600,
+    "language_code": "en",
+    "language_name": "English"
+  },
+  "prompts": {
+    "system_message": "Please answer the user's question based solely on the provided context documents. If the question cannot be answered from the provided context, say you cannot answer. Your answer should be concise. /no_think",
+    "user_message_template": "\nContext:\n{reference_documents}\n\nQuestion: {question}\nRespond exclusively in English, regardless of any other language used in the provided context. You MUST respond in English.",
+    "context_template": "Document {doc_number}:\n{document}"
+  },
+  "embedding": {
+    "model_id": "bge-m3",
+    "dimension": 1024
+  },
+  "retrieval": {
+    "include_entity_neighbors": true,
+    "entity_neighbor_limit": 5,
+    "entity_pivot_limit": 3,
+    "entity_relationship_hops": 1,
+    "relationship_neighbor_limit": 5,
+    "method": "simple",
+    "number_of_chunks": 12,
+    "search_mode": "graph",
+    "ranker_strategy": "",
+    "ranker_k": null,
+    "ranker_alpha": null
+  },
+  "agentic": {
+    "enable_context_compression": false
+  },
+  "vector_store": {
+    "provider_type": "neo4j",
+    "collection_name": "ai4rag_ami_demo3_source"
+  }
+}

@@ -1,0 +1,5 @@
+FROM docker.io/library/python:3.12-slim
+WORKDIR /app
+RUN useradd --uid 1000 --user-group --home /app maritime && chown maritime:maritime /app
+USER maritime
+CMD ["python3", "-c", "import time; time.sleep(2147483647)"]

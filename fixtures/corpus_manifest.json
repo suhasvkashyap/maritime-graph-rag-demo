@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-11-18T15:45:01+00:00",
+  "demo_id": "impact",
+  "classification": "synthetic",
+  "notice": "All names, identifiers, vessels, organizations, times and events are fictional exercise data for Asteria Maritime Insights (AMI).",
+  "analysis_cutoff": "2026-11-17T12:00:00Z",
+  "pdf": "assets/graph/ami_maritime_graph_corpus.pdf",
+  "sections": [
+    {
+      "section_id": "D01",
+      "title": "Vessel register and aliases",
+      "published_at": "2026-11-16T09:00:00Z",
+      "characters": 421
+    },
+    {
+      "section_id": "D02",
+      "title": "Vessel operators",
+      "published_at": "2026-11-16T09:15:00Z",
+      "characters": 353
+    },
+    {
+      "section_id": "D03",
+      "title": "Corporate group",
+      "published_at": "2026-11-16T09:30:00Z",
+      "characters": 375
+    },
+    {
+      "section_id": "D04",
+      "title": "Planned vessel calls",
+      "published_at": "2026-11-16T10:00:00Z",
+      "characters": 754
+    },
+    {
+      "section_id": "D05",
+      "title": "Locations",
+      "published_at": "2026-11-16T10:15:00Z",
+      "characters": 279
+    },
+    {
+      "section_id": "D06",
+      "title": "Berth B4 closure notice",
+      "published_at": "2026-11-16T11:00:00Z",
+      "characters": 328
+    },
+    {
+      "section_id": "D07",
+      "title": "Shipment assignments per call",
+      "published_at": "2026-11-16T11:15:00Z",
+      "characters": 476
+    },
+    {
+      "section_id": "D08",
+      "title": "Terminal capability",
+      "published_at": "2026-11-16T11:30:00Z",
+      "characters": 259
+    },
+    {
+      "section_id": "D09",
+      "title": "Schedule correction for SYN-C103",
+      "published_at": "2026-11-17T09:00:00Z",
+      "characters": 324
+    },
+    {
+      "section_id": "D10",
+      "title": "Position reports",
+      "published_at": "2026-11-17T10:30:00Z",
+      "characters": 422
+    },
+    {
+      "section_id": "D11",
+      "title": "Handling proposal",
+      "published_at": "2026-11-17T11:00:00Z",
+      "characters": 304
+    },
+    {
+      "section_id": "D12",
+      "title": "Receiving assignments",
+      "published_at": "2026-11-16T12:00:00Z",
+      "characters": 348
+    }
+  ]
+}

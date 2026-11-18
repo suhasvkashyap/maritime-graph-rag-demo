@@ -1,0 +1,8 @@
+# UI/application dependencies (pattern1 has its own venv and pyproject).
+streamlit>=1.40,<2
+pydantic>=2.7,<3
+httpx>=0.27,<1
+pytest>=8.0
+fpdf2>=2.7
+pypdf>=4.0
+python-dotenv>=1.0
