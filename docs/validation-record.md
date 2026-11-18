@@ -40,3 +40,5 @@ Neo4j's bundled APOC plugin was enabled during model-extraction diagnosis, follo
 ## Distribution validation
 
 A clean checkout installed both locked environments and passed 74 application tests plus 7 backend tests. A freshly provisioned Neo4j 2026.10.2 container with newly generated credentials ingested the included corpus to 12 chunks, 31 nodes and 35 relationships. Both temporal acceptance cases passed against the clean service. Local-only logs, screenshots and environment files are excluded from the distribution.
+
+The clean-checkout live agent acceptance also passed: 56.6 seconds, six model calls, all four required tools successful. Secret scanning with Gitleaks found no leaks in the staged distribution or initial Git history. This is a bounded local validation, not a guarantee for every platform.
