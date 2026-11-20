@@ -60,6 +60,9 @@ def get_settings() -> Settings:
 
 
 def get_analyst(settings: Settings) -> PortImpactAnalyst:
+    from adapters.sandbox import SandboxAnalyst, execution_mode
+    if execution_mode(settings) == "openshell":
+        return SandboxAnalyst(settings)
     llm = None
     if settings.agent_mode == "live":
         llm = LLMClient(
@@ -263,61 +266,69 @@ def main() -> None:
     render_header()
     settings = get_settings()
 
-    st.markdown(
-        "**Investigate:** which scheduled vessel visits (port calls) overlap a berth closure, who is affected, "
-        "and what shipments are connected. Every claim carries evidence; exclusions carry reasons."
-    )
-    form = st.form("run_form")
-    question = form.selectbox(
-        "Question",
-        SAMPLE_QUESTIONS if settings.data_mode == "fixture" else SAMPLE_QUESTIONS[:-2],
-        index=0,
-        help="Pick a sample question or type your own below.",
-    )
-    custom = form.text_input("…or type a custom question", value="")
-    preset = form.radio(
-        "Analysis cutoff (as-of)",
-        list(CUTOFF_PRESETS.keys()),
-        index=0,
-        horizontal=True,
-    )
-    submitted = form.form_submit_button("▶️ Run investigation", type="primary", use_container_width=True)
+    investigation, whole_graph = st.tabs(["Run investigation", "Full Graph RAG"])
+    with whole_graph:
+        from demos.graph_overview import render_overview
+        if settings.data_mode == "live":
+            render_overview(settings.graph_pattern_url)
+        else:
+            st.info("The complete graph view requires the live Graph RAG backend. Fixture rehearsal does not query it.")
+    with investigation:
+        st.markdown(
+            "**Investigate:** which scheduled vessel visits (port calls) overlap a berth closure, who is affected, "
+            "and what shipments are connected. Every claim carries evidence; exclusions carry reasons."
+        )
+        form = st.form("run_form")
+        question = form.selectbox(
+            "Question",
+            SAMPLE_QUESTIONS if settings.data_mode == "fixture" else SAMPLE_QUESTIONS[:-2],
+            index=0,
+            help="Pick a sample question or type your own below.",
+        )
+        custom = form.text_input("…or type a custom question", value="")
+        preset = form.radio(
+            "Analysis cutoff (as-of)",
+            list(CUTOFF_PRESETS.keys()),
+            index=0,
+            horizontal=True,
+        )
+        submitted = form.form_submit_button("▶️ Run investigation", type="primary", use_container_width=True)
 
-    if submitted:
-        final_question = custom.strip() or question
-        cutoff = CUTOFF_PRESETS[preset]
-        analyst = get_analyst(settings)
-        with st.spinner(
-            f"Running PortImpactAnalyst ({'scripted rehearsal' if settings.agent_mode == 'scripted' else settings.model_id})…"
-        ):
-            try:
-                result = analyst.run(final_question, cutoff)
-            except Exception as exc:  # noqa: BLE001 - surface cleanly in UI
-                st.error(f"Run failed: {type(exc).__name__}: {exc}")
-                st.stop()
-        st.session_state["result"] = result
-        st.session_state["evidence_items"] = [
-            {
-                "evidence_id": item.evidence_id,
-                "source_id": item.source_id,
-                "published_at": item.published_at.isoformat() if item.published_at else None,
-                "excerpt": (" ".join(item.excerpt.split()))[:400] + ("…" if len(item.excerpt) > 400 else ""),
+        if submitted:
+            final_question = custom.strip() or question
+            cutoff = CUTOFF_PRESETS[preset]
+            analyst = get_analyst(settings)
+            with st.spinner(
+                f"Running PortImpactAnalyst ({'scripted rehearsal' if settings.agent_mode == 'scripted' else settings.model_id})…"
+            ):
+                try:
+                    result = analyst.run(final_question, cutoff)
+                except Exception as exc:  # noqa: BLE001 - surface cleanly in UI
+                    st.error(f"Run failed: {type(exc).__name__}: {exc}")
+                    st.stop()
+            st.session_state["result"] = result
+            st.session_state["evidence_items"] = [
+                {
+                    "evidence_id": item.evidence_id,
+                    "source_id": item.source_id,
+                    "published_at": item.published_at.isoformat() if item.published_at else None,
+                    "excerpt": (" ".join(item.excerpt.split()))[:400] + ("…" if len(item.excerpt) > 400 else ""),
+                }
+                for item in analyst.last_evidence()
+            ]
+            st.session_state["run_inputs"] = {"question": final_question, "cutoff": cutoff}
+
+        result = st.session_state.get("result")
+        if result:
+            run_inputs = st.session_state.get("run_inputs", {})
+            current = {
+                "question": (custom.strip() or question) if "question" in locals() else "",
+                "cutoff": CUTOFF_PRESETS[preset] if "preset" in locals() else "",
             }
-            for item in analyst.last_evidence()
-        ]
-        st.session_state["run_inputs"] = {"question": final_question, "cutoff": cutoff}
-
-    result = st.session_state.get("result")
-    if result:
-        run_inputs = st.session_state.get("run_inputs", {})
-        current = {
-            "question": (custom.strip() or question) if "question" in locals() else "",
-            "cutoff": CUTOFF_PRESETS[preset] if "preset" in locals() else "",
-        }
-        stale = run_inputs != current
-        render_result(result, stale)
-    else:
-        st.info("Configure the question and cutoff, then run the investigation.")
+            stale = run_inputs != current
+            render_result(result, stale)
+        else:
+            st.info("Configure the question and cutoff, then run the investigation.")
 
 
 if __name__ == "__main__":

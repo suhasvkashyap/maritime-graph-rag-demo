@@ -1,9 +1,7 @@
 """Maritime source document and graph explorer."""
 import json
 from pathlib import Path
-import httpx
 import streamlit as st
-from demos.graph_view import _render_graph_view
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -16,21 +14,9 @@ def catalog():
 def show_data(kind, backend):
     docs = catalog()
     if kind == 'graph':
-        st.subheader('Source-parsed Neo4j graph')
-        st.caption('Live graph neighborhoods. Select an entity to explore its connected records; this view is not filtered by an investigation cutoff.')
-        focus = st.selectbox('Start from an entity', ['SYN-C101', 'SYN-V001', 'SYN-O01', 'SYN-G01', 'SYN-N017', 'SYN-B04', 'SYN-S101', 'SYN-C103', 'SYN-U09'])
-        try:
-            response = httpx.get(backend + '/v1/graph/evidence', params={'entities': focus, 'max_nodes':25, 'max_edges':35}, timeout=15)
-            response.raise_for_status()
-            graph = response.json()
-            st.markdown(_render_graph_view(graph), unsafe_allow_html=True)
-            st.caption(f"{len(graph['nodes'])} nodes · {len(graph['edges'])} relationships in this neighborhood")
-            st.dataframe([{'From':e['source'], 'Relationship':e['relationship'], 'To':e['target'], 'Source':', '.join(c.get('section_id','') for c in e['chunks'])} for e in graph['edges']], hide_index=True, use_container_width=True)
-            ids = {c['section_id'] for e in graph['edges'] for c in e['chunks'] if c.get('section_id')}
-            docs = [d for d in docs if d['section_id'] in ids]
-        except (httpx.HTTPError, KeyError) as exc:
-            st.error(f'Live graph unavailable: {type(exc).__name__}. No fixture graph substituted.')
-            return
+        from demos.graph_overview import render_overview
+        render_overview(backend, key='dialog_overview')
+        return
     elif kind == 'maritime':
         st.subheader('Maritime records')
         docs = docs[:5]

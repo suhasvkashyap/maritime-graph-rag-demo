@@ -1,5 +1,7 @@
 # Demo 3 — verified local validation record
 
+Historical record for the original local investigator and fixed-probe architecture. It does not validate the new full-agent sandbox deployment; see [current setup and validation limits](openshell-agent.md).
+
 Date: 2026-11-18. Validation notes for the synthetic maritime demo. Runtime artifacts are generated locally and intentionally excluded from Git.
 
 ## Verified implementation

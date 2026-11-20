@@ -1,0 +1,48 @@
+# Containerized OpenClaw Gateway for the AMI maritime demo.
+#
+# Why a container: the macOS AppleSystemPolicy/syspolicyd layer on this Mac
+# SIGKILLs every process executed from the OpenClaw package tree, including
+# freshly reinstalled copies (see docs/openclaw.md). The
+# denial survives reboot, OS update and reinstall, so the gateway, its SQLite
+# workers and the maritime bridge run on Linux here instead. No security
+# control is disabled anywhere: the OpenShell bridge keeps its end-to-end
+# mTLS transport, and the gateway is published on host loopback only.
+FROM node:24-bookworm-slim
+
+ARG OPENCLAW_VERSION=2026.11.6
+ARG OPENSHELL_VERSION=0.1.9
+ARG OPENSHELL_CLI_SHA256=cb923d08703b966f7e0e6b1483ed4ba6ed77bc10812c5502bcc1fb6ee0f6ad59
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends python3 python3-venv ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/*
+
+# Pin the exact OpenClaw build the demo uses. The npm allowScripts gate defers
+# lifecycle scripts; allow the four packages the demo stack relies on for this
+# one install so their scripts run.
+RUN npm install --global --allow-scripts=@google/genai,esbuild,protobufjs,openclaw openclaw@${OPENCLAW_VERSION}
+
+# Linux build of the OpenShell CLI (static musl binary, single file) used by
+# the maritime bridge transport. Checksum-verified at build time.
+RUN curl -fsSL -o /tmp/openshell.tar.gz \
+      "https://github.com/NVIDIA/OpenShell/releases/download/v${OPENSHELL_VERSION}/openshell-aarch64-unknown-linux-musl.tar.gz" \
+ && echo "${OPENSHELL_CLI_SHA256}  /tmp/openshell.tar.gz" | sha256sum -c - \
+ && tar -xzf /tmp/openshell.tar.gz -C /usr/local/bin \
+ && chmod 0755 /usr/local/bin/openshell \
+ && rm /tmp/openshell.tar.gz
+
+# Bridge runtime: the repo plugin spawns ${repoRoot}/.venv/bin/python with the
+# same dependency set as the host bridge (see requirements-app.txt).
+RUN python3 -m venv /opt/ami-runtime/.venv \
+ && /opt/ami-runtime/.venv/bin/pip install --no-cache-dir "pydantic>=2.7,<3" "python-dotenv>=1.0"
+
+COPY entrypoint.sh /usr/local/bin/openclaw-gateway-entrypoint
+RUN chmod 0755 /usr/local/bin/openclaw-gateway-entrypoint \
+ && mkdir -p /opt/ami-runtime/adapters /opt/ami-runtime/shared \
+             /opt/ami-runtime/.run/openclaw-investigations /state /opt/plugins
+
+ENV OPENCLAW_STATE_DIR=/state \
+    OPENCLAW_CONFIG_PATH=/state/openclaw.json \
+    XDG_CONFIG_HOME=/state/openshell-config
+EXPOSE 18790
+ENTRYPOINT ["openclaw-gateway-entrypoint"]

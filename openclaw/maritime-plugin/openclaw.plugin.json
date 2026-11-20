@@ -1,0 +1,25 @@
+{
+  "id": "ami-maritime",
+  "name": "AMI Maritime Investigator",
+  "description": "Delegate evidence-backed investigations to the existing OpenShell specialist.",
+  "contracts": {
+    "tools": [
+      "investigate_port_impact"
+    ]
+  },
+  "activation": {
+    "onStartup": true
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "repoRoot": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "repoRoot"
+    ]
+  }
+}

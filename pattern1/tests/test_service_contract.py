@@ -44,6 +44,35 @@ class ServiceContract(unittest.TestCase):
         self.assertEqual(calls[3].kwargs['target_id'],'n2')
         self.assertEqual(result['edges'][0]['chunks'][0]['section_id'],'D04')
 
+    def test_overview_keeps_isolated_nodes_parallel_edges_and_provenance(self):
+        session = MagicMock()
+        nodes = [{"id": str(i), "name": f"node-{i}"} for i in range(31)]
+        edge = {"id":"r1", "source_id":"0", "target_id":"1", "source":"node-0",
+                "target":"node-1", "relationship":"carries", "chunk_id":"chunk1",
+                "metadata":'{"section_id":"D07"}', "excerpt":"Source evidence"}
+        session.run.return_value.data.side_effect = [nodes, [edge, dict(edge, id="r2")]]
+        main.app.state.collection = 'ai4rag_test'
+        with patch.object(main, '_read_session') as mock:
+            mock.return_value.__enter__.return_value = session
+            result = asyncio.run(main.graph_overview())
+        self.assertTrue(result['complete'])
+        self.assertEqual(result['node_count'], 31)
+        self.assertEqual(result['edge_count'], 2)
+        self.assertEqual(result['edges'][0]['chunks'][0]['section_id'], 'D07')
+        for call in session.run.call_args_list:
+            self.assertEqual(call.kwargs['col'], 'ai4rag_test')
+        self.assertIn('COALESCE(a.ai4rag_kg_collections', main._OVERVIEW_EDGES_QUERY)
+        self.assertIn('COALESCE(b.ai4rag_kg_collections', main._OVERVIEW_EDGES_QUERY)
+
+    def test_overview_rejects_oversize_collection_without_truncation(self):
+        session = MagicMock()
+        session.run.return_value.data.side_effect = [[{}] * 1001, []]
+        with patch.object(main, '_read_session') as mock:
+            mock.return_value.__enter__.return_value = session
+            with self.assertRaises(main.HTTPException) as error:
+                asyncio.run(main.graph_overview())
+        self.assertEqual(error.exception.status_code, 413)
+
     def test_local_model_does_not_escalate_timeout_or_retry(self):
         client=MagicMock()
         client.chat.completions.create.side_effect=TimeoutError('bounded')

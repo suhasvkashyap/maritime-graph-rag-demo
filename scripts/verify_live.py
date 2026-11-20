@@ -6,6 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 import httpx
 from adapters.llm import LLMClient
+from adapters.sandbox import SandboxAnalyst, execution_mode
 from demos.port_impact import PortImpactAnalyst
 from shared.configuration import Settings
 from shared.exports import build_impact_brief
@@ -47,12 +48,12 @@ def main():
     if args.agent:
         live=replace(settings,agent_mode='live')
         llm=LLMClient(live.model_endpoint,live.model_id,live.model_api_key,timeout_seconds=60)
-        analyst=PortImpactAnalyst(live,llm)
+        analyst=SandboxAnalyst(live) if execution_mode(live)=="openshell" else PortImpactAnalyst(live,llm)
         start=time.monotonic()
         result=analyst.run(QUESTION,'2026-11-17T12:00:00Z')
         (output/'live-agent.json').write_text(result.model_dump_json(indent=2))
         (output/'live-agent.md').write_text(build_impact_brief(result))
-        print('Live agent:',result.status.value,'elapsed',round(time.monotonic()-start,1),'model calls',llm.model_calls,flush=True)
+        print('Live agent:',result.status.value,'elapsed',round(time.monotonic()-start,1),'runtime',execution_mode(live),flush=True)
         print('Tools:',[(event.tool_name,event.outcome) for event in result.tool_events],flush=True)
         assert result.status.value=='complete',result.model_dump_json()
         assert result.agent_mode=='live' and result.data_mode=='live'

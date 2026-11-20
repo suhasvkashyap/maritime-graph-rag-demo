@@ -77,6 +77,7 @@ class ToolError(Exception):
 
 
 class ErrorCode(str, Enum):
+    PERMISSION_DENIED = "permission_denied"
     BACKEND_UNAVAILABLE = "backend_unavailable"
     BACKEND_ERROR = "backend_error"
     VALIDATION = "validation"

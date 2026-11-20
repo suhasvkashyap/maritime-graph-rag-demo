@@ -42,14 +42,14 @@ Do not present a partial or failed run as complete. Check `.run/backend.log`, `.
 
 ## Boundaries
 
-This is synthetic advisory data, not an operational intelligence assessment. No booking, diversion, delivery, notification or approval is executed. The dedicated maritime worker verifies endpoint-level OpenShell denial. The main investigator remains local; full investigator sandboxing and document-path filtering are not verified.
+This is synthetic advisory data, not an operational intelligence assessment. No booking, diversion, delivery, notification or approval is executed. The full investigator is configured for OpenShell; the dashboard remains local. Live verification requires a compatible gateway and fresh audit evidence. Document-path filtering is not tested.
 
 ## Clickable data walkthrough
 
 - Click **12 synthetic source documents** for the D01–D12 catalog. Select any document to render its full extracted text.
 - **Maritime records** filters D01–D05; **Operational evidence** filters D06–D12.
-- **Source-parsed Neo4j graph** opens a live neighborhood browser. Select an entity, inspect edges and read their supporting documents. This exploratory view is not cutoff-filtered.
+- **View full Graph RAG** (or the **Full Graph RAG** tab) shows all 31 entities and 35 relationships together. Zoom, pan, search, and select any node or arrow to inspect source evidence. This overview is not cutoff-filtered.
 
-Open **Maritime OpenShell — live denial scenario**, then **Run maritime denial test**. The dedicated `ami-maritime` worker uses `deployment/sandbox-policy.yaml`: Graph RAG port **8010** is allowed, and synthetic document-service destination **8031** is denied. The UI requires an allowed HTTP 200 control, errno 13 on the denied request, and a fresh matching OpenShell DENIED audit event before reporting verification.
+Open **Maritime OpenShell — live denial scenario**, then **Run sandboxed agent challenge**. Verification requires successful graph retrieval, a model-selected permission error on the synthetic document service, and a fresh matching OpenShell denial event.
 
-This is a fixed tool-execution probe in the maritime sandbox, not a model-selected action. The main investigator and dashboard remain local. It proves destination enforcement, not document-path authorization. Start a stopped worker with `openshell sandbox start ami-maritime`; the worker image is built from `deployment/Containerfile.policy-worker`. No other demo sandbox is involved.
+The complete investigator now runs in `ami-maritime-agent` and the model selects the document request. Follow the [updated setup and presenter walkthrough](openshell-agent.md), including OpenShell 0.1.9 provider setup. Historical recordings show the previous fixed probe.

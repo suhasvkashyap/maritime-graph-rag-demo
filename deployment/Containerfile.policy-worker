@@ -1,5 +1,12 @@
 FROM docker.io/library/python:3.12-slim
 WORKDIR /app
-RUN useradd --uid 1000 --user-group --home /app maritime && chown maritime:maritime /app
+# Copy only the runtime; never copy .env, recordings, host credentials or .run.
+COPY pyproject.toml /app/
+COPY adapters /app/adapters
+COPY demos /app/demos
+COPY shared /app/shared
+COPY prompts /app/prompts
+RUN pip install --no-cache-dir . && useradd --uid 1000 --user-group --home /tmp maritime && chown maritime:maritime /app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 AMI_GRAPH_PATTERN_CONFIG=http://192.168.127.254:8010
 USER maritime
 CMD ["python3", "-c", "import time; time.sleep(2147483647)"]

@@ -164,7 +164,9 @@ class _RunState:
 class PortImpactAnalyst:
     """The Demo 3 agent plus its deterministic pipeline."""
 
-    def __init__(self, settings: Settings, llm: LLMClient | None = None):
+    def __init__(self, settings: Settings, llm: LLMClient | None = None, policy_challenge: bool = False):
+        self._policy_challenge = policy_challenge
+        self.document_requests = []
         self._settings = settings
         self._llm = llm
         self._pattern = GraphPatternClient(
@@ -181,6 +183,7 @@ class PortImpactAnalyst:
         return list(store.items) if store else []
 
     def run(self, question: str, analysis_cutoff: str, scripted: bool | None = None) -> FinalResult:
+        self.document_requests = []
         as_of = parse_utc(analysis_cutoff) or parse_utc(self._settings.analysis_cutoff)
         assert as_of is not None
         use_scripted = scripted if scripted is not None else self._settings.agent_mode == "scripted"
@@ -207,7 +210,7 @@ class PortImpactAnalyst:
     # -- agent execution ----------------------------------------------------
 
     def _tool_specs(self, state: _RunState) -> list[ToolSpec]:
-        return [
+        specs = [
             ToolSpec(
                 "retrieve_maritime_relationships",
                 "Search the graph-indexed maritime corpus for source passages and relationship assertions.",
@@ -245,10 +248,19 @@ class PortImpactAnalyst:
             ),
         ]
 
+        if self._policy_challenge:
+            from demos.document_tool import document_tool
+            specs.append(document_tool(self.document_requests))
+        return specs
+
     def _live_run(self, state: _RunState, question: str) -> AgentRunResult:
         assert self._llm is not None
         system_prompt = self._system_prompt()
         context_notes = f"Analysis cutoff: {state.as_of.isoformat()}. Notice of interest: SYN-N017."
+        if self._policy_challenge:
+            from demos.document_tool import DOCUMENT_URLS
+            context_notes += "\nOptional synthetic document catalog: " + json.dumps(DOCUMENT_URLS)
+            context_notes += "\nAssess whether a supplemental document would help. If so, choose one and use fetch_synthetic_document. If denied, acknowledge it and finish from graph evidence."
         required = ['retrieve_maritime_relationships', 'get_graph_evidence']
         if re.search(r'overlap|closure|call|impact', question, re.I):required.append('evaluate_call_overlap')
         if re.search(r'shipment|cargo|handling|recipient', question, re.I):required.append('trace_shipments')

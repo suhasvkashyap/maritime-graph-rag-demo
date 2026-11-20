@@ -345,6 +345,50 @@ async def graph_status():
     }
 
 
+# Bounded whole-collection reads: fail explicitly rather than silently truncate.
+_OVERVIEW_NODES_QUERY = (
+    f"MATCH (e:{_SCHEMA_ENTITY_LABEL}) WHERE $col IN COALESCE(e.ai4rag_kg_collections, []) "
+    "RETURN elementId(e) AS id, e.name AS name, coalesce(e.display_name, e.name) AS display_name, "
+    "coalesce(e.kind, 'Entity') AS kind, "
+    "[l IN labels(e) WHERE NOT l IN ['__Entity__', '__KGBuilder__']] AS type_labels "
+    "ORDER BY e.name, id LIMIT 1001"
+)
+_OVERVIEW_EDGES_QUERY = (
+    f"MATCH (a:{_SCHEMA_ENTITY_LABEL})-[r]->(b:{_SCHEMA_ENTITY_LABEL}) "
+    "WHERE $col IN COALESCE(a.ai4rag_kg_collections, []) "
+    "AND $col IN COALESCE(b.ai4rag_kg_collections, []) "
+    "AND $col IN COALESCE(r.ai4rag_kg_collections, []) AND type(r) IN $allowed_types "
+    "OPTIONAL MATCH (c:Chunk {id: r.source_chunk_id, collection: $col}) "
+    "RETURN elementId(r) AS id, elementId(a) AS source_id, elementId(b) AS target_id, "
+    "a.name AS source, b.name AS target, coalesce(r.predicate, type(r)) AS relationship, "
+    "c.id AS chunk_id, c.metadata AS metadata, substring(c.text, 0, 220) AS excerpt "
+    "ORDER BY source, target, relationship, id LIMIT 5001"
+)
+
+
+@app.get("/v1/graph/overview", summary="Complete demo entity graph with source provenance", tags=["Graph"])
+async def graph_overview():
+    with _read_session() as session:
+        nodes = session.run(_OVERVIEW_NODES_QUERY, col=app.state.collection).data()
+        rows = session.run(_OVERVIEW_EDGES_QUERY, col=app.state.collection,
+                           allowed_types=sorted(_ALLOWED_REL_TYPES)).data()
+    if len(nodes) > 1000 or len(rows) > 5000:
+        raise HTTPException(status_code=413, detail="Collection exceeds whole-graph view limits; no partial graph returned.")
+    edges = []
+    for row in rows:
+        try:
+            metadata = json.loads(row.get("metadata") or "{}")
+        except (TypeError, ValueError):
+            metadata = {}
+        if not isinstance(metadata, dict):
+            metadata = {}
+        edges.append({key: row[key] for key in ("id", "source_id", "target_id", "source", "target", "relationship")} | {
+            "chunks": [{"chunk_id": row["chunk_id"], "section_id": metadata.get("section_id"),
+                        "excerpt": row.get("excerpt") or ""}] if row.get("chunk_id") else []})
+    return {"collection": app.state.collection, "scope": "complete_entity_graph", "complete": True,
+            "nodes": nodes, "edges": edges, "node_count": len(nodes), "edge_count": len(edges)}
+
+
 @app.get("/v1/graph/evidence", summary="Extracted entity neighborhood with chunk provenance", tags=["Graph"])
 async def graph_evidence(
     entities: str = Query(..., description="Comma-separated entity names (case-insensitive)."),

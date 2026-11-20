@@ -26,20 +26,22 @@ def render_architecture(settings, labels):
     .ami-boundary strong {font-size:.88rem;}
     .ami-boundary p {font-size:.81rem;line-height:1.5;margin:7px 0 0;}
     </style>''', unsafe_allow_html=True)
+    from adapters.sandbox import execution_mode
+    runtime = execution_mode(settings)
     agent, data, demo = st.columns(3)
     with agent:
         st.markdown('<section class="ami-card"><h3>Agent</h3>'
-            f'<div class="ami-status">Current execution: {escape(labels.agent)} · local process</div>'
+            f'<div class="ami-status">Current execution: {escape(labels.agent)} · {escape(runtime)}</div>'
             + _flow(
                 ('Port Impact Analyst', 'One coordinating agent plans the investigation and selects tools.', True),
                 ('Evidence & graph tools', 'Retrieve source passages and inspect connected Neo4j records.'),
                 ('Impact & shipment tools', 'Calculate schedule overlap, apply corrections and trace cargo recipients.'),
                 ('Evidence-backed brief', 'Assemble validated findings, exclusions and the tool action log.'),
             )
-            + '<div class="ami-boundary"><strong>Maritime OpenShell worker — active</strong>'
-            '<p>Dedicated ami-maritime sandbox runs the access-test tool worker. Graph RAG and model inference remain host services.</p>'
+            + '<div class="ami-boundary"><strong>Maritime OpenShell agent — configured</strong>'
+            '<p>Live mode dispatches the complete investigator to ami-maritime-agent. Graph RAG stays external; model access uses an attached OpenShell provider.</p>'
             '<p>Maritime policy: endpoint/method allowlists; restricted filesystem writes; Landlock best-effort compatibility.</p>'
-            '<p><b>The access-test worker is sandboxed. The dashboard and model-driven investigator run locally.</b></p></div></section>', unsafe_allow_html=True)
+            '<p><b>The dashboard stays local. Sandbox execution requires the OpenShell inference provider; the challenge displays observed verification.</b></p></div></section>', unsafe_allow_html=True)
     with data:
         from demos.data_explorer import show_data
         with st.container(border=True):
@@ -49,7 +51,7 @@ def render_architecture(settings, labels):
                 ('12 synthetic source documents', 'Browse D01–D12 and read each document.', 'documents'),
                 ('Maritime records', 'Vessels, aliases, companies, ports and scheduled visits.', 'maritime'),
                 ('Operational evidence', 'Closure, corrections, shipments, proposals and receiving assignments.', 'operations'),
-                ('Source-parsed Neo4j graph', 'Explore connected entities and source-backed relationships.', 'graph'),
+                ('View full Graph RAG', 'All entities and relationships in one interactive map.', 'graph'),
             ]:
                 if st.button(title, key='explore_' + kind, use_container_width=True):
                     show_data(kind, settings.graph_pattern_url)
@@ -67,23 +69,28 @@ def render_architecture(settings, labels):
                 ('Agent + connected evidence', 'Join notice → berth → vessel visit → vessel/operator and shipment/recipient.'),
                 ('Decision-support output', 'Impact graph, planned overlap hours, source citations and reasons for exclusions.'),
             ) + '</section>', unsafe_allow_html=True)
+    with st.expander('OpenClaw conversational investigation'):
+        st.markdown("""OpenClaw adds follow-up questions, historical comparisons, and draft handoffs using the **same sandboxed investigator**.
+
+**Flow:** OpenClaw browser chat → maritime delegation tool → **OpenShell investigator** → Graph RAG → source-backed findings → OpenClaw briefing.
+
+The local assistant runs outside OpenShell. Graph RAG comes from an OpenShift AI-generated starter kit; current model and knowledge requests run locally. Cluster hosting is a separate deployment option.
+
+Start with `./scripts/install_openclaw.sh`, then `.venv/bin/python scripts/start_openclaw.py`. Open authenticated chat with `./scripts/openclaw.sh dashboard`.
+
+Try: “Investigate SYN-N017 as of 2026-11-17T12:00:00Z.” Then: “Compare with 2026-11-16T12:00:00Z and explain C103.”
+
+Run investigations sequentially. The original denial challenge below remains the place to verify network enforcement.""")
     from demos.maritime_policy import show_maritime_policy
     if st.button('Maritime OpenShell — live denial scenario', use_container_width=True):
         show_maritime_policy()
     with st.expander('Maritime OpenShell policy & execution boundary'):
-        st.markdown('''**Verified boundary:** Local dashboard → **OpenShell [ami-maritime access-test worker]** → maritime Graph RAG on **8010** (allowed). An outside-policy document destination on **8031** is denied.
+        st.markdown("""**Configured boundary:** Local dashboard → **OpenShell [ami-maritime-agent: full investigator]** → Graph RAG on **8010**. Model access comes from the attached **ami-maritime-inference** provider profile, separate from the base sandbox policy.
 
-The model-driven Port Impact Analyst currently runs locally; full investigator sandbox deployment is not claimed.
+The model selects an optional synthetic document URL on port **8031**. Verification requires a model-selected permission error, fresh matching audit evidence and successful graph retrieval. No attempt is reported as unverified.
 
-One model-driven agent coordinates four tool responsibilities; these are not four separately deployed agents.
+The bounded model loop, tools, evidence validation and brief assembly execute inside the sandbox. The dashboard and data explorer remain local. Explicit local/rehearsal mode does not claim isolation.
 
-| Maritime worker policy | Applied from `deployment/sandbox-policy.yaml` |
-|---|---|
-| Graph RAG egress | Host gateway, port 8010: POST `/v1/retrieve`, `/v1/responses`; GET `/health`, `/v1/graph/status`, `/v1/graph/evidence` |
-| Model egress | Host gateway, port 11434: POST `/v1/chat/completions`; GET `/v1/models` |
-| Process scope | Network rules scoped to `/usr/local/bin/python3.12` |
-| Filesystem | Work directory included; listed system paths read-only; `/tmp` and `/dev/null` writable |
-| Enforcement settings | Network `enforce`; Landlock `best_effort`; endpoint TLS setting `skip` |
-| Application controls | Bounded tool calls and deadlines; source citations; cutoff filtering; no booking or diversion actions |
+Filesystem: `/app` and system paths read-only, `/tmp` writable; Landlock best-effort. This challenge verifies destination enforcement, not document-path or filesystem enforcement.
 
-**Runtime distinction:** This session runs locally, outside OpenShell. The cluster pipeline is the origin of the starter kit; the current UI is not calling the cluster. Endpoint allow/deny enforcement is verified for the ami-maritime worker. Document-path filtering and full investigator sandbox execution are not verified.''')
+**OpenShell 0.1.9:** Uses provider profiles and sandbox attachments. The retired `inference.local` route is not used. The agent never falls back to host execution.""")

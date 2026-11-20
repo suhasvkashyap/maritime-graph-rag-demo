@@ -246,7 +246,7 @@ def _compact_envelope(envelope: ToolEnvelope) -> dict[str, Any]:
     compact: dict[str, Any] = {"ok": envelope.ok}
     if envelope.error:
         compact["error"] = envelope.error
-        compact["error_code"] = str(envelope.error_code) if envelope.error_code else None
+        compact["error_code"] = envelope.error_code.value if envelope.error_code else None
     if envelope.warnings:
         compact["warnings"] = envelope.warnings
     data = envelope.data
@@ -257,6 +257,7 @@ def _compact_envelope(envelope: ToolEnvelope) -> dict[str, Any]:
         ]
         compact["excluded_after_cutoff"] = data.get("excluded_after_cutoff", [])
     for key in (
+        "document_request",
         "relationships",
         "identity",
         "effective_calls",

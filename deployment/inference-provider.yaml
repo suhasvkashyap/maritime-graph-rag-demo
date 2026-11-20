@@ -1,0 +1,16 @@
+# OpenShell 0.1.9: model access is supplied by an attached provider profile.
+# This host address matches the Podman/macOS gateway used by the graph policy.
+id: ami-maritime-inference
+display_name: Maritime local inference
+description: Ollama OpenAI-compatible inference for the maritime investigator
+category: inference
+inference_capable: true
+credentials: []
+endpoints:
+  - host: '192.168.127.254'
+    port: 11434
+    protocol: rest
+    access: read-write
+    enforcement: enforce
+binaries:
+  - /usr/local/bin/python3.12

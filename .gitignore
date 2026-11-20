@@ -33,3 +33,20 @@ docs/AUDIT_AND_GLM_HANDOFF.md
 docs/source-graph-build.json
 
 docs/live-scripted-run.json
+
+# Demo recordings, voiceovers and video-production working files
+*.[mM][pP]4
+*.[mM][oO][vV]
+*.[mM]4[vV]
+*.[wW][eE][bB][mM]
+*.[mM][kK][vV]
+*.[aA][vV][iI]
+*.[mM][pP]3
+*.[wW][aA][vV]
+*.[mM]4[aA]
+video-edit/
+demos/openclaw-openshell-graphrag-demo/
+
+# Machine-specific diagnostic reports and optional JS runtime dependencies
+docs/openclaw-startup-diagnostic.txt
+node_modules/
